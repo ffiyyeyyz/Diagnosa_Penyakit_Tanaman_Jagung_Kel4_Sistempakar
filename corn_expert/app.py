@@ -101,16 +101,20 @@ st.markdown("""
         margin: 0.15rem;
         border: 1px solid #86efac;
     }
+
+    /* ✅ FIX #2: Step-box dengan background gelap agar teks terlihat jelas */
     .step-box {
-        background: #f8fafc;
-        border: 1px solid #e2e8f0;
+        background: #1e293b;
+        border: 1px solid #334155;
         border-radius: 8px;
         padding: 1rem;
         font-family: monospace;
         font-size: 0.82rem;
+        color: #e2e8f0;
         white-space: pre-wrap;
         overflow-x: auto;
     }
+
     .sidebar-info {
         background: #f0fdf4;
         border-radius: 8px;
@@ -127,6 +131,19 @@ st.markdown("""
         padding: 1rem;
         text-align: center;
         border: 1px solid #86efac;
+    }
+
+    /* ✅ FIX #4: Skala keyakinan CF di sidebar — background gelap, teks putih */
+    .skala-cf-box {
+        background: #14532d;
+        border-radius: 8px;
+        padding: 0.8rem;
+        border: 1px solid #16a34a;
+        margin-top: 1rem;
+        color: #f0fdf4;
+    }
+    .skala-cf-box b {
+        color: #bbf7d0;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -181,14 +198,15 @@ with st.sidebar:
         placeholder="Contoh: Brebes, Jawa Tengah"
     )
 
+    # ✅ FIX #4: Pakai class skala-cf-box (background hijau tua, teks putih)
     st.markdown("""
-    <div class="sidebar-info">
+    <div class="skala-cf-box">
         <b>📌 Skala Keyakinan CF:</b><br>
-        🔵 Tidak Yakin → 0.2<br>
-        🟡 Agak Yakin → 0.4<br>
-        🟢 Yakin → 0.6<br>
+        🔵 Tidak Yakin &nbsp;→ 0.2<br>
+        🟡 Agak Yakin &nbsp;&nbsp;→ 0.4<br>
+        🟢 Yakin &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;→ 0.6<br>
         💚 Sangat Yakin → 0.8<br>
-        ✅ Pasti → 1.0
+        ✅ Pasti &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;→ 1.0
     </div>
     """, unsafe_allow_html=True)
 
@@ -364,6 +382,7 @@ if halaman == "🔍 Diagnosa Penyakit":
                             st.markdown("---")
 
                 # ── Tab Grafik ─────────────────────────────
+                # ✅ FIX #1: Ganti background menjadi coklat tua / gelap agar tulisan & bar terlihat
                 with tab_grafik:
                     if len(hasil) >= 1:
                         # Bar chart horizontal
@@ -375,14 +394,14 @@ if halaman == "🔍 Diagnosa Penyakit":
                         ])
 
                         warna_map = {
-                            "Sangat Tinggi": "#16a34a",
-                            "Tinggi": "#65a30d",
-                            "Sedang": "#ca8a04",
-                            "Rendah": "#ea580c",
-                            "Sangat Rendah": "#dc2626",
+                            "Sangat Tinggi": "#4ade80",
+                            "Tinggi": "#86efac",
+                            "Sedang": "#fde68a",
+                            "Rendah": "#fb923c",
+                            "Sangat Rendah": "#f87171",
                         }
                         warna_bars = [
-                            warna_map.get(h["tingkat_keyakinan"], "#6b7280")
+                            warna_map.get(h["tingkat_keyakinan"], "#94a3b8")
                             for h in hasil[:8]
                         ]
 
@@ -391,18 +410,34 @@ if halaman == "🔍 Diagnosa Penyakit":
                             y=df["Penyakit"],
                             orientation='h',
                             marker_color=warna_bars,
+                            marker_line_color='rgba(255,255,255,0.3)',
+                            marker_line_width=1,
                             text=[f"{v}%" for v in df["CF (%)"]],
                             textposition='outside',
+                            textfont=dict(color='#f1f5f9', size=12),
                         ))
                         fig_bar.update_layout(
-                            title="Perbandingan Nilai CF Penyakit",
-                            xaxis_title="Nilai CF (%)",
-                            yaxis_title="",
-                            height=350,
-                            xaxis_range=[0, 110],
-                            plot_bgcolor="#f8fafc",
-                            paper_bgcolor="white",
-                            font=dict(size=11),
+                            title=dict(
+                                text="Perbandingan Nilai CF Penyakit",
+                                font=dict(color="#f1f5f9", size=14)
+                            ),
+                            xaxis=dict(
+                                title="Nilai CF (%)",
+                                title_font=dict(color="#94a3b8"),
+                                tickfont=dict(color="#94a3b8"),
+                                gridcolor="#334155",
+                                range=[0, 120],
+                            ),
+                            yaxis=dict(
+                                title="",
+                                tickfont=dict(color="#e2e8f0", size=11),
+                                gridcolor="#334155",
+                            ),
+                            height=380,
+                            plot_bgcolor="#1e293b",
+                            paper_bgcolor="#0f172a",
+                            font=dict(color="#e2e8f0"),
+                            margin=dict(l=20, r=20, t=50, b=40),
                         )
                         st.plotly_chart(fig_bar, use_container_width=True)
 
@@ -413,7 +448,8 @@ if halaman == "🔍 Diagnosa Penyakit":
                                 g for h in hasil[:3] for g in h["gejala_cocok"]
                             ))
                             fig_radar = go.Figure()
-                            for h in hasil[:3]:
+                            warna_radar = ["#4ade80", "#60a5fa", "#f472b6"]
+                            for idx_r, h in enumerate(hasil[:3]):
                                 nilai = []
                                 for gid in semua_gejala_ids:
                                     val = next(
@@ -426,13 +462,39 @@ if halaman == "🔍 Diagnosa Penyakit":
                                     theta=semua_gejala_ids + [semua_gejala_ids[0]],
                                     fill='toself',
                                     name=h["nama"][:25],
-                                    opacity=0.6,
+                                    opacity=0.7,
+                                    line=dict(color=warna_radar[idx_r], width=2),
+                                    fillcolor=warna_radar[idx_r].replace(")", ",0.3)").replace("rgb", "rgba") if warna_radar[idx_r].startswith("rgb") else warna_radar[idx_r],
                                 ))
                             fig_radar.update_layout(
-                                polar=dict(radialaxis=dict(visible=True, range=[0, 1])),
+                                polar=dict(
+                                    bgcolor="#1e293b",
+                                    radialaxis=dict(
+                                        visible=True,
+                                        range=[0, 1],
+                                        tickfont=dict(color="#94a3b8"),
+                                        gridcolor="#334155",
+                                        linecolor="#334155",
+                                    ),
+                                    angularaxis=dict(
+                                        tickfont=dict(color="#e2e8f0"),
+                                        gridcolor="#334155",
+                                        linecolor="#475569",
+                                    ),
+                                ),
                                 showlegend=True,
-                                height=350,
-                                title="Kontribusi Gejala per Penyakit",
+                                legend=dict(
+                                    font=dict(color="#e2e8f0"),
+                                    bgcolor="#1e293b",
+                                    bordercolor="#334155",
+                                ),
+                                height=380,
+                                title=dict(
+                                    text="Kontribusi Gejala per Penyakit",
+                                    font=dict(color="#f1f5f9", size=14)
+                                ),
+                                paper_bgcolor="#0f172a",
+                                font=dict(color="#e2e8f0"),
                             )
                             st.plotly_chart(fig_radar, use_container_width=True)
 
@@ -445,12 +507,24 @@ if halaman == "🔍 Diagnosa Penyakit":
                             values=list(keyakinan_count.values()),
                             names=list(keyakinan_count.keys()),
                             title="Distribusi Tingkat Keyakinan",
-                            color_discrete_sequence=["#16a34a","#65a30d","#ca8a04","#ea580c","#dc2626"],
+                            color_discrete_sequence=["#4ade80","#86efac","#fde68a","#fb923c","#f87171"],
                             hole=0.4,
                         )
+                        fig_pie.update_layout(
+                            paper_bgcolor="#0f172a",
+                            plot_bgcolor="#1e293b",
+                            font=dict(color="#e2e8f0"),
+                            title=dict(font=dict(color="#f1f5f9")),
+                            legend=dict(
+                                font=dict(color="#e2e8f0"),
+                                bgcolor="#1e293b",
+                            ),
+                        )
+                        fig_pie.update_traces(textfont=dict(color="#0f172a"))
                         st.plotly_chart(fig_pie, use_container_width=True)
 
                 # ── Tab Perhitungan ────────────────────────
+                # ✅ FIX #2: step-box sudah diubah di CSS jadi background gelap
                 with tab_hitung:
                     st.markdown("**Rumus CF:**")
                     st.latex(r"CF_{gejala} = CF_{pakar} \times CF_{user}")
@@ -481,17 +555,20 @@ if halaman == "🔍 Diagnosa Penyakit":
                                     unsafe_allow_html=True)
 
                 # ── Tab Laporan ────────────────────────────
+                # ✅ FIX #3: Tambah tombol Download PDF yang lebih robust
                 with tab_laporan:
                     st.markdown("### 📄 Unduh Laporan Hasil Diagnosa")
 
+                    # Generate laporan teks dulu (selalu tersedia)
+                    laporan_teks = generate_text_report(
+                        hasil,
+                        gejala_dipilih,
+                        st.session_state.nama_petani,
+                        st.session_state.lokasi,
+                    )
+
                     col_r1, col_r2 = st.columns(2)
                     with col_r1:
-                        laporan_teks = generate_text_report(
-                            hasil,
-                            gejala_dipilih,
-                            st.session_state.nama_petani,
-                            st.session_state.lokasi,
-                        )
                         st.download_button(
                             "⬇️ Unduh Laporan (.txt)",
                             data=laporan_teks,
@@ -519,8 +596,24 @@ if halaman == "🔍 Diagnosa Penyakit":
                             except Exception as e:
                                 st.error(f"Gagal generate PDF: {e}")
                         else:
-                            st.info("Install `reportlab` untuk mengaktifkan ekspor PDF:\n"
-                                    "```pip install reportlab```")
+                            st.warning(
+                                "⚠️ **Fitur PDF belum aktif.**\n\n"
+                                "Install `reportlab` terlebih dahulu:\n"
+                                "```\npip install reportlab\n```\n"
+                                "Kemudian restart aplikasi."
+                            )
+                            # Tombol PDF disabled visual
+                            st.button("⬇️ Unduh Laporan (.pdf)", disabled=True,
+                                      use_container_width=True,
+                                      help="Install reportlab untuk mengaktifkan fitur ini")
+
+                    st.markdown("---")
+                    st.markdown("**ℹ️ Catatan:**")
+                    st.markdown(
+                        "- File `.txt` selalu tersedia tanpa instalasi tambahan\n"
+                        "- File `.pdf` memerlukan library `reportlab` (`pip install reportlab`)\n"
+                        "- Laporan berisi detail gejala, hasil diagnosa, dan langkah perhitungan CF"
+                    )
 
                     # Preview laporan teks
                     with st.expander("👁 Preview Laporan"):
@@ -638,10 +731,8 @@ elif halaman == "ℹ️ Tentang Sistem":
         dan Buchanan** (1975) dalam sistem MYCIN.
 
         **Rumus:**
-        ```
-        CF(H, E) = CF_pakar × CF_user
-        CF_kombinasi = CF1 + CF2 × (1 - CF1)
-        ```
+         CF(H, E) = CF_pakar × CF_user
+    CF_kombinasi = CF1 + CF2 × (1 - CF1)
         """)
 
     with col2:
@@ -665,11 +756,11 @@ elif halaman == "ℹ️ Tentang Sistem":
     st.markdown("---")
     st.markdown("""
     #### 🔗 Cara Menjalankan
-    ```bash
+```bash
     # Install dependencies
     pip install streamlit plotly pandas reportlab
 
     # Jalankan aplikasi
     streamlit run app.py
-    ```
+```
     """)
